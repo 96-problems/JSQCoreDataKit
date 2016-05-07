@@ -34,6 +34,8 @@ public let defaultStoreOptions: PersistentStoreOptions = [
     NSInferMappingModelAutomaticallyOption: true
 ]
 
+public let defaultMergePolicy = NSMergePolicy(mergeType: .MergeByPropertyStoreTrumpMergePolicyType)
+
 // MARK: Internal
 
 internal func defaultDirectoryURL() -> NSURL {

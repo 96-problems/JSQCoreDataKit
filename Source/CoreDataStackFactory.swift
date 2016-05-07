@@ -42,6 +42,13 @@ public struct CoreDataStackFactory: CustomStringConvertible, Equatable {
      The default value is `DefaultStoreOptions`.
      */
     public let options: PersistentStoreOptions?
+	
+	/**
+	The merge policy of the managed object contexts to be used if the in-memory and
+	the on-disk object snapshots diverge when saving the context.
+	The default value is `defaultMergePolicy`.
+	*/
+	public let mergePolicy: NSMergePolicy
 
 
     // MARK: Initialization
@@ -54,8 +61,11 @@ public struct CoreDataStackFactory: CustomStringConvertible, Equatable {
 
      - returns: A new `CoreDataStackFactory` instance.
      */
-    public init(model: CoreDataModel, options: PersistentStoreOptions? = defaultStoreOptions) {
+	public init(model: CoreDataModel,
+	            mergePolicy: NSMergePolicy = defaultMergePolicy,
+	            options: PersistentStoreOptions? = defaultStoreOptions) {
         self.model = model
+		self.mergePolicy = mergePolicy
         self.options = options
     }
 
@@ -96,10 +106,14 @@ public struct CoreDataStackFactory: CustomStringConvertible, Equatable {
                 return
             }
 
-            let backgroundContext = self.createContext(.PrivateQueueConcurrencyType, name: "background")
+			let backgroundContext = self.createContext(.PrivateQueueConcurrencyType,
+			                                           mergePolicy: self.mergePolicy,
+			                                           name: "background")
             backgroundContext.persistentStoreCoordinator = storeCoordinator
 
-            let mainContext = self.createContext(.MainQueueConcurrencyType, name: "main")
+            let mainContext = self.createContext(.MainQueueConcurrencyType,
+                                                 mergePolicy: self.mergePolicy,
+                                                 name: "main")
             mainContext.persistentStoreCoordinator = storeCoordinator
 
             let stack = CoreDataStack(model: self.model,
@@ -137,9 +151,10 @@ public struct CoreDataStackFactory: CustomStringConvertible, Equatable {
 
     private func createContext(
         concurrencyType: NSManagedObjectContextConcurrencyType,
+        mergePolicy: NSMergePolicy,
         name: String) -> NSManagedObjectContext {
         let context = NSManagedObjectContext(concurrencyType: concurrencyType)
-        context.mergePolicy = NSMergePolicy(mergeType: .MergeByPropertyStoreTrumpMergePolicyType)
+        context.mergePolicy = mergePolicy
 
         let contextName = "JSQCoreDataKit.CoreDataStack.context."
         context.name = contextName + name
